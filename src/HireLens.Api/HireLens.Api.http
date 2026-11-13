@@ -1,0 +1,14 @@
+@host = http://localhost:5063
+
+GET {{host}}/health
+
+###
+
+POST {{host}}/api/hello
+Content-Type: application/json
+
+{ "message": "hello from HireLens" }
+
+###
+
+GET {{host}}/api/hello

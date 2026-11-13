@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HireLens.Api/HireLens.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HireLens.Tests/HireLens.Tests.csproj" />
+  </Folder>
+</Solution>
