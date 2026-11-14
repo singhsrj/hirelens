@@ -3,10 +3,36 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HireLens</title>
+  <title>Open roles | HireLens</title>
+  <meta name="description" content="Browse open roles and apply with your resume.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/pages/jobs.js"></script>
 </head>
 <body>
-  <h1>HireLens</h1>
-  <p>API is running. Frontend arrives in Phase 3. See <a href="/scalar">/scalar</a> for the API docs.</p>
+  <header class="site-header">
+    <div class="inner">
+      <a class="wordmark" href="/">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="10.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M22 22l7 7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="8" y="12.5" width="3" height="3" rx=".8" fill="#0d7a64"/><rect x="12.5" y="12.5" width="3" height="3" rx=".8" fill="#0d7a64"/><rect x="17" y="12.5" width="3" height="3" rx=".8" fill="none" stroke="#ad3a4e" stroke-width="1"/></svg>
+        HireLens
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/" aria-current="page">Open roles</a>
+        <a href="/recruiter/">Recruiter</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="page-head">
+      <div>
+        <h1>Open roles</h1>
+        <p class="lede">Pick a role, paste your resume and apply. No account needed.</p>
+      </div>
+    </div>
+    <div id="jobs"></div>
+  </main>
 </body>
 </html>
