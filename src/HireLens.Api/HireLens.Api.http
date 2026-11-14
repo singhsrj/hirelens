@@ -1,14 +1,63 @@
 @host = http://localhost:5063
+# Paste ids from responses here.
+@jobId = REPLACE_WITH_JOB_ID
+@appId = REPLACE_WITH_APPLICATION_ID
 
 GET {{host}}/health
 
 ###
-
-POST {{host}}/api/hello
+# Create a job
+POST {{host}}/api/jobs
 Content-Type: application/json
 
-{ "message": "hello from HireLens" }
+{
+  "title": "Software Engineer",
+  "location": "Remote",
+  "descriptionText": "Build ASP.NET Core APIs in C# backed by MongoDB, with plain JavaScript frontends.",
+  "mustHaveSkills": ["C#", "MongoDB", "JavaScript"],
+  "niceToHaveSkills": ["Python", "Docker"]
+}
 
 ###
+GET {{host}}/api/jobs
 
-GET {{host}}/api/hello
+###
+GET {{host}}/api/jobs/{{jobId}}
+
+###
+# Edit / close (omit "status" to keep the current one)
+PUT {{host}}/api/jobs/{{jobId}}
+Content-Type: application/json
+
+{
+  "title": "Software Engineer",
+  "location": "Remote",
+  "descriptionText": "Build ASP.NET Core APIs in C# backed by MongoDB, with plain JavaScript frontends.",
+  "mustHaveSkills": ["C#", "MongoDB"],
+  "niceToHaveSkills": ["Python"],
+  "status": "open"
+}
+
+###
+# Apply (skills typed by hand until NER in Phase 4)
+POST {{host}}/api/jobs/{{jobId}}/applications
+Content-Type: application/json
+
+{
+  "name": "Alice Example",
+  "email": "alice@example.com",
+  "resumeText": "Backend engineer with six years of C# and ASP.NET Core, MongoDB and some JavaScript.",
+  "skills": ["C#", "MongoDB"]
+}
+
+###
+GET {{host}}/api/jobs/{{jobId}}/applications
+
+###
+GET {{host}}/api/applications/{{appId}}
+
+###
+PATCH {{host}}/api/applications/{{appId}}/status
+Content-Type: application/json
+
+{ "status": "shortlisted" }
