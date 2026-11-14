@@ -1,0 +1,85 @@
+{
+  "_comment": "Fictional demo data. People, emails and employers are invented. daysAgo backdates createdAt; status is applied unless set.",
+  "jobs": [
+    {
+      "key": "dotnet",
+      "title": "Software Engineer (.NET)",
+      "location": "Pune, hybrid",
+      "descriptionText": "We're hiring a software engineer to build and maintain our hiring platform.\n\nWhat you'll do:\n- Build ASP.NET Core Web APIs in C# backed by MongoDB.\n- Turn design specs into responsive pages with HTML, CSS and JavaScript.\n- Write unit tests and take features from design to production in an agile team.\n\nNice to have: some Python, and experience shipping services with Docker.",
+      "mustHaveSkills": ["C#", "ASP.NET Core", "MongoDB", "JavaScript", "HTML"],
+      "niceToHaveSkills": ["Python", "Docker", "Azure"],
+      "daysAgo": 12
+    },
+    {
+      "key": "nlp",
+      "title": "NLP Engineer (Python)",
+      "location": "Remote, India",
+      "descriptionText": "Join the team that turns unstructured resumes into structured data.\n\nWhat you'll do:\n- Build entity extraction pipelines in Python with spaCy.\n- Serve models behind FastAPI services packaged with Docker.\n- Measure extraction quality and improve it with better rules and training data.\n\nNice to have: machine learning experience with PyTorch, and AWS.",
+      "mustHaveSkills": ["Python", "spaCy", "NLP", "FastAPI", "Docker"],
+      "niceToHaveSkills": ["Machine Learning", "PyTorch", "AWS"],
+      "daysAgo": 9
+    }
+  ],
+  "applicants": [
+    {
+      "job": "dotnet", "name": "Ananya Iyer", "email": "ananya.iyer@example.com", "daysAgo": 11, "status": "shortlisted",
+      "resumeText": "Ananya Iyer, Pune\n\nSoftware Engineer, Brightline Fintech (March 2021 - Present)\n- Built ASP.NET Core Web APIs in C# for a payments dashboard, storing transaction history in MongoDB.\n- Rebuilt the merchant portal frontend in plain JavaScript, HTML and CSS from Figma designs.\n- Added xUnit tests and GitHub Actions CI.\n\nIntern, Nexora Labs (2020)\n- Python scripts for data cleanup.\n\nB.E. Computer Engineering, 2021."
+    },
+    {
+      "job": "dotnet", "name": "Rohan Mehta", "email": "rohan.mehta@example.com", "daysAgo": 10,
+      "resumeText": "Rohan Mehta, Mumbai\n\nBackend Developer, Corvid Logistics (2019 - Present)\n- C# and ASP.NET Core microservices on Azure, SQL Server and Redis.\n- Migrated a reporting module from Entity Framework to stored procedures.\n- On-call for production incidents; wrote runbooks.\n\nSkills: C#, .NET, SQL Server, Azure, Docker, Git."
+    },
+    {
+      "job": "dotnet", "name": "Sneha Kulkarni", "email": "sneha.kulkarni@example.com", "daysAgo": 9,
+      "resumeText": "Sneha Kulkarni, Bangalore\n\nFull Stack Engineer, Lumen Health (June 2020 - Present)\n- Developed patient-intake APIs with ASP.NET Core and C#, persisting records in MongoDB.\n- Built accessible forms in HTML, CSS and JavaScript; some React for the admin console.\n- Containerised services with Docker and deployed to Azure.\n\nSkills: C#, MongoDB, JavaScript, HTML, CSS, React, Docker, Azure, Agile."
+    },
+    {
+      "job": "dotnet", "name": "Arjun Nair", "email": "arjun.nair@example.com", "daysAgo": 8, "status": "rejected",
+      "resumeText": "Arjun Nair, Kochi\n\nJava Developer, Tidewater Systems (2018 - Present)\n- Spring Boot services backed by PostgreSQL and Kafka.\n- Wrote integration tests with JUnit and Testcontainers.\n\nSkills: Java, Spring Boot, PostgreSQL, Kafka, Kubernetes."
+    },
+    {
+      "job": "dotnet", "name": "Meera Pillai", "email": "meera.pillai@example.com", "daysAgo": 7,
+      "resumeText": "Meera Pillai, Chennai\n\nFrontend Developer, Pixelcraft Studio (2021 - Present)\n- Built marketing sites and dashboards in JavaScript, TypeScript, HTML and CSS.\n- Worked with backend teams consuming REST APIs written in C#.\n\nSkills: JavaScript, TypeScript, HTML, CSS, Sass, Vue.js, Git."
+    },
+    {
+      "job": "dotnet", "name": "Karan Singh", "email": "karan.singh@example.com", "daysAgo": 6,
+      "resumeText": "Karan Singh, Delhi\n\nSoftware Engineer, Quillstone (2022 - Present)\n- C# and ASP.NET Core APIs for a document workflow product; MongoDB for document metadata.\n- Small JavaScript widgets for the web client.\n\nSkills: C#, ASP.NET Core, MongoDB, JavaScript, Python, OOP, data structures."
+    },
+    {
+      "job": "dotnet", "name": "Divya Rao", "email": "divya.rao@example.com", "daysAgo": 4,
+      "resumeText": "Divya Rao, Hyderabad\n\nGraduate Engineer, Orbitex (2023 - Present)\n- Maintained WPF desktop tools in C#.\n- Wrote SQL reports and Excel automation.\n\nSkills: C#, WPF, SQL, Excel, Git."
+    },
+    {
+      "job": "dotnet", "name": "Vikram Joshi", "email": "vikram.joshi@example.com", "daysAgo": 3,
+      "resumeText": "Vikram Joshi, Pune\n\nSenior Engineer, Harbourline (2016 - Present)\n- Led a team building ASP.NET Core and C# services, with MongoDB and Elasticsearch for search.\n- Owned the HTML, CSS and JavaScript design system used across four products.\n- Introduced Docker and Terraform for environments.\n\nSkills: C#, ASP.NET Core, MongoDB, Elasticsearch, JavaScript, HTML, CSS, Docker, Terraform, Agile."
+    },
+    {
+      "job": "dotnet", "name": "Nisha Verma", "email": "nisha.verma@example.com", "daysAgo": 1,
+      "resumeText": "Nisha Verma, Indore\n\nSoftware Developer, Kestrel Apps (2021 - Present)\n- Node.js and Express APIs with MongoDB.\n- React frontends in JavaScript and HTML.\n\nSkills: JavaScript, Node.js, Express, MongoDB, React, HTML, CSS."
+    },
+    {
+      "job": "nlp", "name": "Aditya Banerjee", "email": "aditya.banerjee@example.com", "daysAgo": 8, "status": "shortlisted",
+      "resumeText": "Aditya Banerjee, Kolkata\n\nNLP Engineer, Parsewell (2020 - Present)\n- Built named entity recognition pipelines in Python with spaCy for contract analysis.\n- Served models through FastAPI behind Docker on AWS.\n- Trained custom models with PyTorch; tracked extraction precision and recall.\n\nSkills: Python, spaCy, NLP, FastAPI, Docker, PyTorch, AWS, machine learning."
+    },
+    {
+      "job": "nlp", "name": "Priya Menon", "email": "priya.menon@example.com", "daysAgo": 7,
+      "resumeText": "Priya Menon, Bangalore\n\nData Scientist, Northstar Retail (2019 - Present)\n- Machine learning models in Python with Pandas, NumPy and TensorFlow for demand forecasting.\n- Some NLP work classifying customer reviews.\n\nSkills: Python, machine learning, NLP, Pandas, NumPy, TensorFlow, SQL."
+    },
+    {
+      "job": "nlp", "name": "Farhan Qureshi", "email": "farhan.qureshi@example.com", "daysAgo": 6,
+      "resumeText": "Farhan Qureshi, Lucknow\n\nBackend Engineer, Glyph Labs (2021 - Present)\n- Python services with FastAPI and Django, packaged with Docker and deployed via GitHub Actions.\n- Built a small spaCy prototype to tag product names in support tickets.\n\nSkills: Python, FastAPI, Django, Docker, spaCy, PostgreSQL, Redis."
+    },
+    {
+      "job": "nlp", "name": "Ishita Ghosh", "email": "ishita.ghosh@example.com", "daysAgo": 5, "status": "rejected",
+      "resumeText": "Ishita Ghosh, Pune\n\nQA Engineer, Venture Grid (2020 - Present)\n- Test automation with Selenium and Playwright in Python.\n- Maintained Jenkins pipelines.\n\nSkills: Python, Selenium, Playwright, Jenkins, Agile."
+    },
+    {
+      "job": "nlp", "name": "Rahul Desai", "email": "rahul.desai@example.com", "daysAgo": 3,
+      "resumeText": "Rahul Desai, Ahmedabad\n\nML Engineer, Cobalt AI (2022 - Present)\n- NLP pipelines in Python using spaCy and PyTorch for resume parsing.\n- Exposed models with FastAPI; containerised with Docker; experiments on GCP.\n\nSkills: Python, NLP, spaCy, PyTorch, FastAPI, Docker, GCP."
+    },
+    {
+      "job": "nlp", "name": "Tanvi Shah", "email": "tanvi.shah@example.com", "daysAgo": 2,
+      "resumeText": "Tanvi Shah, Surat\n\nSoftware Engineer, Mosaic Commerce (2023 - Present)\n- Python and Flask APIs; Docker for local development.\n- Learning NLP through side projects.\n\nSkills: Python, Flask, Docker, NLP, Git."
+    }
+  ]
+}

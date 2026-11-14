@@ -1,7 +1,7 @@
 // Recruiter: create a job, or edit one when ?id= is present.
 import { api } from "../api.js";
 import {
-  $, h, param, loading, errorState, emptyState,
+  $, h, mountSignOut, param, loading, errorState, emptyState,
   skillInput, showFieldErrors, clearFieldErrors, clearErrorsOnInput, busy, flash,
 } from "../ui.js";
 
@@ -142,4 +142,5 @@ function field(name, label, control, hint) {
     h("p", { class: "error", id: `${name}-error`, dataset: { errorFor: name } }));
 }
 
+mountSignOut(api.logout, api.me);
 load();

@@ -1,0 +1,211 @@
+%-------------------------
+% Resume Template in LaTeX
+% General Template
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\setlength{\multicolsep}{-3.0pt}
+\setlength{\columnsep}{-1pt}
+\input{glyphtounicode}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.6in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1.19in}
+\addtolength{\topmargin}{-.7in}
+\addtolength{\textheight}{1.4in}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+  \begin{tabular*}{1.0\textwidth}[t]{l@{\extracolsep{\fill}}r}
+    \textbf{#1} & \textbf{\small #2} \\
+    \textit{\small#3} & \textit{\small #4} \\
+  \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+  \item
+  \begin{tabular*}{1.001\textwidth}{l@{\extracolsep{\fill}}r}
+    \small#1 & \textbf{\small #2}\\
+  \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.0in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+\begin{minipage}[c]{0.18\textwidth}
+  % Replace 'institute_logo.png' with your actual institute logo file
+  \includegraphics[width=\linewidth, height=3cm, keepaspectratio]{institute_logo.jpeg}
+\end{minipage}
+\hfill
+\begin{minipage}[c]{0.78\textwidth}
+  \raggedright
+  {\large \scshape \textbf{Indian Institute of Information Technology Vadodara}} \\[4pt]
+  % {\small Gandhinagar, Gujarat} \\[6pt]
+  {\normalsize \scshape \textbf{Suraj Singh}}
+\end{minipage}
+
+\vspace{6pt}
+\noindent\rule{\textwidth}{0.6pt}
+\vspace{-6pt}
+
+\vspace{-10pt}
+
+%-----------EDUCATION-----------
+\section{Education}
+\resumeSubHeadingListStart
+
+  \resumeSubheading
+    {Indian Institute of Information Technology Vadodara}{Aug 2023 -- May 2027}
+    {B.Tech in Computer Science and Engineering \quad \textbf{CPI: 7.33}}{Gandhinagar, Gujarat, India}
+
+  \resumeSubheading
+    {Vanasthali Public School}{Apr 2021 -- Mar 2022}
+    {Class XII (Higher Secondary) -- CBSE \quad \textbf{Percentage: 93.8\%}}{Ghaziabad, Uttar Pradesh}
+
+  \resumeSubheading
+    {Vanasthali Public School}{Apr 2019 -- Mar 2020}
+    {Class X (Secondary) -- CBSE \quad \textbf{Percentage: 75.3\%}}{Ghaziabad, Uttar Pradesh}
+
+\resumeSubHeadingListEnd
+%-----------EXPERIENCE-----------
+\section{Experience}
+\resumeSubHeadingListStart
+  \resumeSubheading
+    {\href{https://www.a2itsoft.com/}{A2IT}}{May 2026 - July 2026}
+    {ML Intern}{Internship, Remote}
+    \resumeItemListStart
+      \resumeItem{Built a data preprocessing pipeline ingesting data from 4 sources, handling missing values, encoding categoricals, and engineering 23 features for downstream models — reduced processing time by 50\%.}
+      \resumeItem{Built a RAG pipeline using FAISS over 10+ internal documents with a React frontend.}
+      % \resumeItem{Collaborated with the team using \textbf{Git/GitHub} for version control, following an \textbf{Agile} development cycle for iterative delivery.}
+    \resumeItemListEnd
+\resumeSubHeadingListEnd
+\vspace{-12pt}
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+\vspace{-5pt}
+\resumeSubHeadingListStart
+
+  \resumeProjectHeading
+    {\textbf{WatchParty- Real-Time YouTube Sync Platform} $|$ \emph{FastAPI, Socket.IO, React, PostgreSQL, Render} $|$ \href{https://github.com/singhsrj/watchparty-youtube}{GitHub} 
+    $|$ \href{https://watchpartyt.netlify.app/}{Live Demo}}{}
+    \resumeItemListStart
+      \resumeItem{Architected a full-stack real-time video-sync platform with server-enforced role-based access control (Host, Moderator, Participant) and PostgreSQL-backed room state that persists across server restarts.}
+      \resumeItem{Engineered a server-authoritative sync protocol that derives playback position from elapsed server time rather than a cached timestamp, holding client drift within a 450ms correction threshold across all connected clients.}
+      \resumeItem{Load-tested the WebSocket layer with a custom Socket.IO script, identifying a 15–24 connection concurrency ceiling on a free-tier deployment where synchronous database commits blocked the event loop, driving join-timeout rates from 0\% to 92\% under load.}
+    \resumeItemListEnd
+  \vspace{-16pt}
+
+  \resumeProjectHeading
+    {\textbf{HireLens- AI Applicant Screener} $|$ \emph{ASP.NET Core, C\#, MongoDB, FastAPI, spaCy, Docker} $|$ \href{https://github.com/singhsrj/hirelens}{GitHub}
+    }{}
+    \resumeItemListStart
+      \resumeItem{Architected a full-stack applicant screener that ranks candidates by must-have skill coverage, pairing an ASP.NET Core Web API and MongoDB with a separate FastAPI + spaCy NER service whose EntityRuler maps 160 aliases to 89 canonical skills; applications still save as pending when NER is down and are re-scored on retry.}
+      \resumeItem{Designed a compound MongoDB index on (jobId, score, createdAt) for the ranked-applicant query and benchmarked it on 50,000 applications, cutting documents examined from 50,000 to 500 and median latency from 45ms to 12ms by eliminating the in-memory sort.}
+      \resumeItem{Diagnosed a 4,100ms stall on every application while the NER service was down, tracing it to Windows retrying refused TCP connections for $\sim$2s per address as localhost resolved to IPv6 then IPv4; a 1s connect timeout cut fallback latency to 1,030ms while keeping a 5s budget for extraction.}
+    \resumeItemListEnd
+
+\resumeSubHeadingListEnd
+\vspace{-8pt}
+
+%-----------ACHIEVEMENTS-----------
+\section{Achievements}
+\begin{itemize}[leftmargin=0.15in, label={}, itemsep=1pt, parsep=0pt]
+  \resumeItemListStart
+    \resumeItem{Solved 300+ problems on \href{https://leetcode.com/u/surajsingh08/}{LeetCode} and GeeksforGeeks.}
+    % \resumeItem{Scholarship or award received (e.g., selected for \textbf{Scholarship Name}, worth Rs. X,XX,XXX).}
+    \resumeItem{3rd place in \href{https://www.indapt.org/docs/competitions/Result_NCICP_2025.pdf}{NCICP 2025}, a national-level competition integrating Software Development and Physics, showcasing
+problem-solving, analytical, and computational skills.}
+  \resumeItemListEnd
+\end{itemize}
+\vspace{-14pt}
+
+%-----------TECHNICAL SKILLS-----------
+
+\section{Technical Skills}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \resumeItemListStart
+    \resumeItem{\textbf{Languages}{: C++, C\#, Java, JavaScript, Python, HTML/CSS}}
+    \resumeItem{\textbf{Core CS}{: Data Structures \& Algorithms, Operating Systems, OOP, DBMS, Computer Networks}}
+    \resumeItem{\textbf{Frameworks \& Libraries}{: ASP.NET Core, React.js, Next.js, Node.js, Express.js, FastAPI, Django, spaCy, Langgraph, LlamaIndex, FastMCP, Numpy, Scikit-learn }}
+    \resumeItem{\textbf{Tools \& Technologies}{: Docker, Git/Github, AWS, MongoDB, PostgreSQL, xUnit, Pytest, VS Code, Render, Netlify }}
+  \resumeItemListEnd
+\end{itemize}
+\vspace{-15pt}
+
+% %-----------VOLUNTEERING-----------
+% \section{Volunteering/Administrative Role/Managerial Role }
+% \resumeSubHeadingListStart
+
+%   \resumeSubheading
+%     {Club / Organisation Name}{Month YYYY -- Present}
+%     {Your Role (e.g., Joint Secretary, Core Member)}{Institution, City}
+%     \resumeItemListStart
+%       \resumeItem{Describe a key initiative or event organized, including scale (e.g., workshops for \textbf{200+ participants}).}
+%       \resumeItem{Mention team management or outreach work and specific events by name.}
+%     \resumeItemListEnd
+
+% \resumeSubHeadingListEnd
+
+\end{document}
+
+

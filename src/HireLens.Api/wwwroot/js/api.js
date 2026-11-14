@@ -12,6 +12,7 @@ export class ApiError extends Error {
 function messageFor(status, problem) {
   if (status === 0) return "Can't reach the server. Check your connection and try again.";
   if (status === 429) return "Too many attempts from this network. Wait a minute, then try again.";
+  if (status === 401 && problem?.detail) return problem.detail;
   if (status === 400 && problem?.errors) return "Some fields need fixing. See the messages below.";
   if (problem?.detail) return problem.detail;
   if (status >= 500) return "The server hit an error. Try again in a moment.";
@@ -30,6 +31,12 @@ async function request(method, url, body) {
     throw new ApiError(0, null);
   }
 
+  // Signed out (or the session expired) on a recruiter page: go to sign-in and come back afterwards.
+  if (response.status === 401 && location.pathname.startsWith("/recruiter")) {
+    location.href = `/login.html?returnUrl=${encodeURIComponent(location.pathname + location.search)}`;
+    return new Promise(() => {}); // never settles; the page is navigating away
+  }
+
   const isJson = response.headers.get("content-type")?.includes("json");
   const data = isJson ? await response.json().catch(() => null) : null;
   if (!response.ok) throw new ApiError(response.status, data);
@@ -39,6 +46,10 @@ async function request(method, url, body) {
 const id = (value) => encodeURIComponent(value);
 
 export const api = {
+  login: (email, password) => request("POST", "/api/auth/login", { email, password }),
+  logout: () => request("POST", "/api/auth/logout"),
+  me: () => request("GET", "/api/auth/me"),
+
   listJobs: (status = "open") => request("GET", `/api/jobs?status=${id(status)}`),
   getJob: (jobId) => request("GET", `/api/jobs/${id(jobId)}`),
   createJob: (job) => request("POST", "/api/jobs", job),

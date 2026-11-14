@@ -1,7 +1,7 @@
 // Recruiter: applicants for one job, ranked by score, with shortlist / reject.
 import { api } from "../api.js";
 import {
-  $, h, param, chips, matchChips, scoreStrip, percent, capitalize, formatDateTime,
+  $, h, mountSignOut, param, chips, matchChips, scoreStrip, percent, capitalize, formatDateTime,
   loading, emptyState, errorState, toast,
 } from "../ui.js";
 
@@ -219,4 +219,5 @@ function details(a) {
   return h("div", { class: "details" }, toggle, panel);
 }
 
+mountSignOut(api.logout, api.me);
 load();

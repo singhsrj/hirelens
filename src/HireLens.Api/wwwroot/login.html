@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in | HireLens</title>
+  <meta name="description" content="Recruiter sign-in.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/pages/login.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="inner">
+      <a class="wordmark" href="/">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="10.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M22 22l7 7" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="8" y="12.5" width="3" height="3" rx=".8" fill="#0d7a64"/><rect x="12.5" y="12.5" width="3" height="3" rx=".8" fill="#0d7a64"/><rect x="17" y="12.5" width="3" height="3" rx=".8" fill="none" stroke="#ad3a4e" stroke-width="1"/></svg>
+        HireLens
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <a href="/">Open roles</a>
+        <a href="/recruiter/" aria-current="page">Recruiter</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="panel login">
+      <h1>Recruiter sign-in</h1>
+      <p class="muted small">Sign in to manage jobs and review applicants. Candidates don't need an account.</p>
+      <form class="form" id="login" novalidate>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="username" required aria-describedby="email-error">
+          <p class="error" id="email-error" data-error-for="email"></p>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required aria-describedby="password-error">
+          <p class="error" id="password-error" data-error-for="password"></p>
+        </div>
+        <p class="form-error" role="alert" id="form-error"></p>
+        <div class="form-actions"><button class="btn btn-primary" type="submit">Sign in</button></div>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

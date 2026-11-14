@@ -1,3 +1,4 @@
+using HireLens.Api.Features.Auth;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HireLens.Api.Features.Applications;
@@ -13,9 +14,14 @@ public static class ApplicationEndpoints
         byJob.MapPost("/", Apply)
             .RequireRateLimiting(ApplyRateLimitPolicy)
             .WithSummary("Candidate applies to a job");
-        byJob.MapGet("/", ListRanked).WithSummary("Applicants for a job, ranked by score");
+        byJob.MapGet("/", ListRanked)
+            .RequireAuthorization(AuthEndpoints.RecruiterPolicy)
+            .WithSummary("Applicants for a job, ranked by score");
 
-        var applications = app.MapGroup("/api/applications").WithTags("Applications");
+        // Everything about existing applications is recruiter-only: it holds candidates' personal data.
+        var applications = app.MapGroup("/api/applications")
+            .WithTags("Applications")
+            .RequireAuthorization(AuthEndpoints.RecruiterPolicy);
 
         applications.MapGet("/{id}", Get).WithSummary("Full application, including resume text");
         applications.MapPatch("/{id}/status", ChangeStatus).WithSummary("Shortlist or reject an applicant");

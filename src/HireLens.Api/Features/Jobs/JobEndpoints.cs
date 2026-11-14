@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using HireLens.Api.Domain;
+using HireLens.Api.Features.Auth;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HireLens.Api.Features.Jobs;
@@ -11,11 +13,15 @@ public static class JobEndpoints
     {
         var jobs = app.MapGroup("/api/jobs").WithTags("Jobs");
 
-        jobs.MapPost("/", CreateJob).WithSummary("Create a job");
-        jobs.MapGet("/", ListJobs).WithSummary("List jobs (open by default)");
+        // Public: candidates browse open jobs and read job details.
+        jobs.MapGet("/", ListJobs).WithSummary("List jobs (open by default; closed/all need a recruiter)");
         jobs.MapGet("/{id}", GetJob).WithSummary("Job details");
-        jobs.MapPut("/{id}", UpdateJob).WithSummary("Edit a job, or close/reopen it");
+
+        // Recruiter only.
+        jobs.MapPost("/", CreateJob).RequireAuthorization(AuthEndpoints.RecruiterPolicy).WithSummary("Create a job");
+        jobs.MapPut("/{id}", UpdateJob).RequireAuthorization(AuthEndpoints.RecruiterPolicy).WithSummary("Edit a job, or close/reopen it");
         jobs.MapPost("/extract-skills", SuggestSkills)
+            .RequireAuthorization(AuthEndpoints.RecruiterPolicy)
             .RequireRateLimiting(SuggestRateLimitPolicy)
             .WithSummary("Suggest must-have skills from a job description (calls the NER service)");
 
@@ -30,8 +36,11 @@ public static class JobEndpoints
 
     /// <param name="status">"open" (default), "closed" or "all".</param>
     private static async Task<Results<Ok<List<JobResponse>>, ProblemHttpResult>> ListJobs(
-        JobService service, CancellationToken ct, string? status = "open")
+        JobService service, ClaimsPrincipal user, CancellationToken ct, string? status = "open")
     {
+        if (status is not (null or "" or "open") && !user.IsRecruiter())
+            return TypedResults.Problem(detail: "Sign in as a recruiter to see closed jobs.", statusCode: StatusCodes.Status401Unauthorized);
+
         JobStatus? filter;
         switch (status?.ToLowerInvariant())
         {

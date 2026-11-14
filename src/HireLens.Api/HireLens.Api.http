@@ -6,6 +6,13 @@
 GET {{host}}/health
 
 ###
+# Sign in first: recruiter endpoints need the auth cookie (the REST client keeps it for later requests).
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{ "email": "recruiter@hirelens.dev", "password": "dev-recruiter-pass-2026" }
+
+###
 # Create a job
 POST {{host}}/api/jobs
 Content-Type: application/json

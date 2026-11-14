@@ -1,4 +1,7 @@
-# Local dev: MongoDB + the NER service. The API runs with `dotnet run` (it's containerised in Phase 5).
+# Full local stack: MongoDB + NER service + API.
+#   docker compose up -d --build      -> app on http://localhost:8080
+# For API development with hot reload, run only the dependencies (docker compose up -d mongo ner)
+# and start the API with `dotnet run` instead (http://localhost:5063).
 services:
   mongo:
     image: mongo:8.0
@@ -23,6 +26,28 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+
+  api:
+    build: ./src/HireLens.Api
+    image: hirelens-api
+    container_name: hirelens-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ner:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Mongo__ConnectionString: mongodb://mongo:27017
+      Mongo__DatabaseName: hirelens
+      Ner__BaseUrl: http://ner:8000
+      # Defaults are the development recruiter (recruiter@hirelens.dev / dev-recruiter-pass-2026).
+      # Override with your own: RECRUITER_EMAIL=... RECRUITER_PASSWORD_HASH=... docker compose up -d
+      Recruiter__Email: ${RECRUITER_EMAIL:-recruiter@hirelens.dev}
+      Recruiter__PasswordHash: ${RECRUITER_PASSWORD_HASH:-AQAAAAIAAYagAAAAEJklJbm3jcmIkpAKzTN1GyAjMhoYYPOQKTSDFiWeDl0Cg5xq7dQxiNX+QVb6LmbW2Q==}
 
 volumes:
   mongo-data:

@@ -63,6 +63,23 @@ export function errorState(container, error, onRetry) {
     onRetry ? h("button", { class: "btn", type: "button", onclick: onRetry }, "Try again") : null));
 }
 
+/**
+ * Recruiter pages: confirm the session (a 401 sends the user to sign-in, see api.js) and add "Sign out".
+ * The check matters even though the server gates these pages, because an old copy could be on screen
+ * from history or cache.
+ */
+export function mountSignOut(logout, me) {
+  me?.();
+  const nav = document.querySelector(".site-nav");
+  if (!nav || nav.querySelector(".sign-out")) return;
+  nav.append(h("button", {
+    type: "button", class: "sign-out",
+    onclick: async () => {
+      try { await logout(); } finally { location.href = "/"; }
+    },
+  }, "Sign out"));
+}
+
 export function toast(message) {
   document.querySelector(".toast")?.remove();
   const el = h("div", { class: "toast", role: "status" }, message);
