@@ -11,6 +11,9 @@ const path = require("path");
 const fs = require("fs");
 
 const BASE = process.env.BASE_URL ?? "http://localhost:5063";
+// Defaults are the development recruiter from appsettings.Development.json.
+const RECRUITER_EMAIL = process.env.E2E_RECRUITER_EMAIL ?? "recruiter@hirelens.dev";
+const RECRUITER_PASSWORD = process.env.E2E_RECRUITER_PASSWORD ?? "dev-recruiter-pass-2026";
 const TITLE = `Software Engineer e2e-${Date.now().toString(36)}`;
 const OUT = path.join(__dirname, "shots");
 fs.mkdirSync(OUT, { recursive: true });
@@ -28,8 +31,24 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   page.on("console", (m) => m.type() === "error" && !m.text().startsWith("Failed to load resource") && consoleErrors.push(m.text()));
   page.on("pageerror", (e) => consoleErrors.push(String(e)));
 
-  // ---------- Recruiter: empty state + create job ----------
+  // ---------- Recruiter sign-in ----------
   await page.goto(`${BASE}/recruiter/`);
+  await page.waitForURL(/\/login\.html\?returnUrl=/);
+  check("recruiter pages redirect to sign-in", true);
+  const anon = await page.request.get(`${BASE}/api/jobs?status=all`);
+  check("recruiter API is 401 when signed out", anon.status() === 401, String(anon.status()));
+  await page.fill("#email", RECRUITER_EMAIL);
+  await page.fill("#password", "definitely-wrong");
+  await page.click("button[type=submit]");
+  await page.waitForFunction(() => document.querySelector("#form-error")?.textContent);
+  check("wrong password shows an error", (await page.textContent("#form-error")).includes("incorrect"));
+  await page.fill("#password", RECRUITER_PASSWORD);
+  await page.click("button[type=submit]");
+  await page.waitForURL(`${BASE}/recruiter/`);
+  check("sign-in returns to the recruiter page", (await page.$(".site-nav .sign-out")) !== null);
+  await page.screenshot({ path: `${OUT}/00-sign-in.png` });
+
+  // ---------- Recruiter: create job ----------
   await page.waitForSelector(".state, table");
   check("recruiter jobs page loads", true);
 
@@ -156,9 +175,18 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   await page.waitForSelector(".state h2");
   check("404 job state", (await page.textContent(".state h2")).includes("doesn't exist"));
 
+  // ---------- Sign out ----------
+  await page.goto(`${BASE}/recruiter/`);
+  await Promise.all([page.waitForURL(`${BASE}/`), page.click(".site-nav .sign-out")]);
+  await page.goto(`${BASE}/recruiter/`);
+  check("sign out ends the session", page.url().includes("/login.html"), page.url());
+  await page.fill("#email", RECRUITER_EMAIL); await page.fill("#password", RECRUITER_PASSWORD);
+  await Promise.all([page.waitForURL(`${BASE}/recruiter/`), page.click("button[type=submit]")]);
+
   // ---------- Mobile + dark ----------
   await page.request.put(`${BASE}/api/jobs/${jobId}`, { data: { title: TITLE, location: "Remote", descriptionText: "Build ASP.NET Core APIs in C# backed by MongoDB, plus plain JavaScript frontends.", mustHaveSkills: ["C#", "MongoDB", "JavaScript"], niceToHaveSkills: ["Python"], status: "open" } });
-  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+  const signedIn = await ctx.storageState();
+  const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, storageState: signedIn });
   const m = await mobile.newPage();
   m.on("pageerror", (e) => consoleErrors.push(String(e)));
   await m.goto(`${BASE}/recruiter/applicants.html?jobId=${jobId}`); await m.waitForSelector(".applicant");
@@ -172,7 +200,7 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   check("mobile: no horizontal scroll (jobs)", !(await m.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)));
   await m.screenshot({ path: `${OUT}/11-mobile-jobs.png`, fullPage: true });
 
-  const dark = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "dark" });
+  const dark = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: "dark", storageState: signedIn });
   const d = await dark.newPage();
   await d.goto(`${BASE}/recruiter/applicants.html?jobId=${jobId}`); await d.waitForSelector(".applicant");
   await d.screenshot({ path: `${OUT}/12-dark-applicants.png`, fullPage: true });

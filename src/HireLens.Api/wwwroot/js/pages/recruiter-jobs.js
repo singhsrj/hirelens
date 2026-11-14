@@ -1,6 +1,6 @@
 // Recruiter: list of jobs with filter, links to applicants and edit.
 import { api } from "../api.js";
-import { $, h, formatDate, capitalize, loading, emptyState, errorState, showFlash } from "../ui.js";
+import { $, h, mountSignOut, formatDate, capitalize, loading, emptyState, errorState, showFlash } from "../ui.js";
 
 const host = $("#jobs");
 const filter = $("#filter");
@@ -52,4 +52,5 @@ function table(jobs) {
 }
 
 showFlash();
+mountSignOut(api.logout, api.me);
 load();

@@ -17,6 +17,12 @@ public sealed class NerOptions
     /// connection otherwise takes ~2 s per address because the OS retries the connect.
     /// </summary>
     public double ConnectTimeoutSeconds { get; set; } = 1;
+
+    /// <summary>
+    /// Shared secret sent as X-Api-Key. Needed when the NER service is publicly reachable (e.g. Render's free
+    /// tier has no private networking); empty locally, where the service only listens on this machine.
+    /// </summary>
+    public string ApiKey { get; set; } = "";
 }
 
 /// <summary>What the Python NER service returns for a piece of text.</summary>
@@ -83,15 +89,27 @@ public static class NerServiceExtensions
     {
         var options = config.GetSection(NerOptions.SectionName).Get<NerOptions>() ?? new NerOptions();
 
+        var baseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+
         services.AddHttpClient<INerClient, NerClient>(http =>
             {
-                http.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+                http.BaseAddress = baseAddress;
                 http.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+                if (!string.IsNullOrEmpty(options.ApiKey))
+                    http.DefaultRequestHeaders.Add(NerWarmup.ApiKeyHeader, options.ApiKey);
             })
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 ConnectTimeout = TimeSpan.FromSeconds(options.ConnectTimeoutSeconds),
             });
+
+        // Separate client with a long timeout: only used to wake a sleeping NER service at startup.
+        services.AddHttpClient(NerWarmup.ClientName, http =>
+        {
+            http.BaseAddress = baseAddress;
+            http.Timeout = TimeSpan.FromSeconds(90);
+        });
+        services.AddHostedService<NerWarmup>();
         return services;
     }
 }

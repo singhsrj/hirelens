@@ -25,3 +25,12 @@ def test_extract_returns_the_contract_shape(client):
 @pytest.mark.parametrize("payload", [{}, {"text": ""}, {"text": "x" * (MAX_TEXT_LENGTH + 1)}])
 def test_extract_rejects_missing_empty_or_huge_text(client, payload):
     assert client.post("/extract", json=payload).status_code == 422
+
+
+def test_api_key_is_enforced_when_configured(client, monkeypatch):
+    monkeypatch.setenv("NER_API_KEY", "s3cret")
+    body = {"text": "C# developer"}
+    assert client.post("/extract", json=body).status_code == 401
+    assert client.post("/extract", json=body, headers={"X-Api-Key": "wrong"}).status_code == 401
+    assert client.post("/extract", json=body, headers={"X-Api-Key": "s3cret"}).status_code == 200
+    assert client.get("/health").status_code == 200  # health stays open for the host's checks
