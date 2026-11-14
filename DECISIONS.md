@@ -22,6 +22,11 @@ A running log of the technical choices in HireLens and why each was made. New de
 | 16 | **.NET 10 built-in validation** (`AddValidation()` + DataAnnotations / `IValidatableObject`) | No extra library. Note: DataAnnotations runs `IValidatableObject` rules only after attribute rules pass, and error keys are PascalCase (`Title`), not camelCase. |
 | 17 | **Per-IP fixed-window rate limit on apply** (5/min, configurable under `RateLimiting:Apply`) | It's the only public write endpoint. Behind a reverse proxy this needs forwarded headers (Phase 5) or every user shares one IP. |
 | 18 | **`TimeProvider` injected** instead of `DateTime.UtcNow` | Tests control the clock, e.g. to check tie-breaking by apply time and status-history timestamps. |
+| 19 | **Native ES modules, one script per page, no bundler** | Browsers load `import` natively; a build step would add tooling without benefit at this size. Shared code lives in `api.js` and `ui.js`. |
+| 20 | **User data only ever reaches the DOM as text** (`h()` helper, `textContent`; no `innerHTML`) | Resumes and names are untrusted input. Building nodes instead of HTML strings makes XSS structurally impossible rather than relying on escaping. |
+| 21 | **Client validation mirrors the API rules; the API stays the authority** | Instant feedback without a round trip, but the server re-validates everything. API field errors are mapped onto the form case-insensitively (the API returns `Title`, the form uses `title`). |
+| 22 | **The score is drawn as a strip with one segment per must-have skill** | It's the plan's "the recruiter sees exactly why someone ranked where they did", made visual: a 67% is visibly "2 of 3, missing MongoDB". |
+| 23 | **Resume text is fetched only when a recruiter opens it** | Keeps the ranked list payload small (the list endpoint already excludes `resumeText`). |
 
 ## Why MongoDB rather than SQL
 

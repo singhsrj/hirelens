@@ -2,7 +2,7 @@
 
 A small applicant screener. A recruiter posts a job, candidates apply with their resume text, a small NER service extracts skills, and the recruiter sees applicants ranked against the job's must-have skills.
 
-> Status: **Phase 2 — backend API done** (skills entered by hand; NER arrives in Phase 4). See [`docs/HireLens_Development_Plan.md`](docs/HireLens_Development_Plan.md) for the full plan and [`DECISIONS.md`](DECISIONS.md) for the reasoning behind the tech choices.
+> Status: **Phase 3 — frontend done.** Recruiter and candidate flows work in the browser (skills entered by hand; NER arrives in Phase 4). See [`docs/HireLens_Development_Plan.md`](docs/HireLens_Development_Plan.md) for the full plan and [`DECISIONS.md`](DECISIONS.md) for the reasoning behind the tech choices.
 
 ## Stack
 
@@ -43,11 +43,24 @@ docker compose up -d mongo          # MongoDB on localhost:27017
 dotnet run --project src/HireLens.Api
 ```
 
-- App: http://localhost:5063
+- Candidate site: http://localhost:5063 (open roles, apply)
+- Recruiter: http://localhost:5063/recruiter/ (create/edit jobs, ranked applicants, shortlist/reject)
 - API docs (Scalar): http://localhost:5063/scalar
 - Health check: http://localhost:5063/health
 
 Try the requests in `src/HireLens.Api/HireLens.Api.http` (VS Code REST Client / Visual Studio), or use the Scalar UI.
+
+## Pages
+
+| Page | Who | What it does |
+|---|---|---|
+| `/` | Candidate | Open roles with their must-have skills |
+| `/job.html?id=…` | Candidate | Role details and the application form |
+| `/recruiter/` | Recruiter | Jobs, filterable by open / closed / all |
+| `/recruiter/job.html[?id=…]` | Recruiter | Create or edit a job, close or reopen it |
+| `/recruiter/applicants.html?jobId=…` | Recruiter | Applicants ranked by score. Each row shows a strip with one segment per must-have skill (filled = has it), the matched and missing skills, shortlist / reject, and the resume on demand |
+
+Plain HTML, CSS and ES modules in `wwwroot/`, no build step. Recruiter pages have no login yet (the single seeded recruiter login is planned).
 
 ## API
 
@@ -69,8 +82,18 @@ Errors are returned as [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457):
 ## Tests
 
 ```bash
-dotnet test
+dotnet test        # xUnit: scoring, status rules, services (no database needed)
 ```
+
+**End-to-end browser test** (`tests/e2e/`): drives the recruiter and candidate flows in the installed Microsoft Edge and saves screenshots to `tests/e2e/shots/`. It submits several applications, so start the API with a relaxed rate limit:
+
+```bash
+RateLimiting__Apply__PermitLimit=100 dotnet run --project src/HireLens.Api
+# PowerShell: $env:RateLimiting__Apply__PermitLimit=100; dotnet run --project src/HireLens.Api
+cd tests/e2e && npm install && npm test        # BASE_URL=... to target another host
+```
+
+Each run creates its own uniquely titled job, so it works against a database that already has data.
 
 ## Project layout
 
@@ -80,8 +103,9 @@ src/HireLens.Api/
   Data/                Mongo setup, repositories, startup index creation
   Features/            Jobs and Applications: request/response contracts, services, endpoints
   Common/              Result type -> ProblemDetails
-  wwwroot/             static frontend (Phase 3)
+  wwwroot/             static frontend: css/app.css, js/api.js (fetch wrapper), js/ui.js (DOM helpers), js/pages/*.js
 tests/HireLens.Tests/  xUnit tests
+tests/e2e/             browser end-to-end test (Node + Edge)
 docs/                  development plan
 docker-compose.yml     local MongoDB
 ```
