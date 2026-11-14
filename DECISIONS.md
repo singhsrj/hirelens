@@ -14,6 +14,14 @@ A running log of the technical choices in HireLens and why each was made. New de
 | 8 | **Minimal APIs** grouped per feature (`Endpoints/*.cs`) instead of MVC controllers | Less ceremony for a small API, first-class OpenAPI support in .NET 10. |
 | 9 | **Singleton `IMongoClient`** registered in DI | The driver's client is thread-safe and owns the connection pool; creating one per request would waste connections. |
 | 10 | **camelCase BSON convention + ignore extra elements** | Documents in Mongo match the JSON the API returns, and old documents still deserialise as fields are added. |
+| 11 | **Ranked-list index is `{ jobId: 1, score: -1, createdAt: 1 }`** (plan said `{ jobId, score }`) | Ties on score are broken by who applied first. Adding `createdAt` to the index means Mongo still walks the index in sort order instead of doing an in-memory sort. |
+| 12 | **Unique index on `{ jobId, email }`**, emails lower-cased | One application per person per job, enforced by the database rather than a racy "check then insert". Duplicates return 409. |
+| 13 | **Editing a job's must-have skills rescores its existing applications** (one unordered bulk write) | Otherwise the ranked list would quietly show scores computed against the old requirements. A few hundred updates is cheap. |
+| 14 | **Status rules:** `applied → shortlisted/rejected`, shortlisted ⇄ rejected allowed, never back to `applied`; repeating the current status is a no-op | Recruiters change their minds, but "un-applying" makes no sense. Idempotent repeats make double-clicks and retries safe. Status + history are written in one atomic `$set` + `$push`. |
+| 15 | **Expected failures are a `Result<T>` value, not exceptions** | Not found / conflict / invalid are normal outcomes. Each maps to a ProblemDetails response (404 / 409 / 400); exceptions are kept for things that are actually broken. |
+| 16 | **.NET 10 built-in validation** (`AddValidation()` + DataAnnotations / `IValidatableObject`) | No extra library. Note: DataAnnotations runs `IValidatableObject` rules only after attribute rules pass, and error keys are PascalCase (`Title`), not camelCase. |
+| 17 | **Per-IP fixed-window rate limit on apply** (5/min, configurable under `RateLimiting:Apply`) | It's the only public write endpoint. Behind a reverse proxy this needs forwarded headers (Phase 5) or every user shares one IP. |
+| 18 | **`TimeProvider` injected** instead of `DateTime.UtcNow` | Tests control the clock, e.g. to check tie-breaking by apply time and status-history timestamps. |
 
 ## Why MongoDB rather than SQL
 
@@ -23,6 +31,6 @@ A running log of the technical choices in HireLens and why each was made. New de
 **Modelling**
 - *Embedded:* `statusHistory` inside an application — small, bounded, always read together.
 - *Referenced:* applications point to a job by `jobId`. A job can receive unlimited applications and a document is capped at 16 MB.
-- *Indexes:* `{ jobId: 1, score: -1 }` serves the ranked applicant list; a multikey index on `skills` answers "who knows X?".
+- *Indexes:* `{ jobId: 1, score: -1, createdAt: 1 }` serves the ranked applicant list; a multikey index on `skills` answers "who knows X?"; a unique `{ jobId, email }` blocks duplicate applications.
 
 **Trade-off:** if the app needed multi-table transactions (payments, bookings), PostgreSQL would be the pick — and Postgres JSONB could store these documents too. Mongo wins here because the whole model is document-shaped.

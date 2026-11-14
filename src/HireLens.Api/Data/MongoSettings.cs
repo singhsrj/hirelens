@@ -1,4 +1,4 @@
-namespace HireLens.Api.Infrastructure;
+namespace HireLens.Api.Data;
 
 /// <summary>Bound from the "Mongo" section of configuration.</summary>
 public sealed class MongoSettings
