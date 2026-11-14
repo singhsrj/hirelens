@@ -3,6 +3,7 @@ using HireLens.Api.Domain;
 using HireLens.Api.Features.Applications;
 using HireLens.Api.Features.Jobs;
 using HireLens.Tests.Fakes;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
 namespace HireLens.Tests.Features;
@@ -13,21 +14,23 @@ public class ServiceTests
 
     private readonly InMemoryJobRepository _jobs = new();
     private readonly InMemoryApplicationRepository _apps = new();
+    private readonly FakeNerClient _ner = new();
     private readonly FakeTimeProvider _time = new(new DateTimeOffset(2026, 11, 1, 9, 0, 0, TimeSpan.Zero));
     private readonly JobService _jobService;
     private readonly ApplicationService _appService;
 
     public ServiceTests()
     {
-        _jobService = new JobService(_jobs, _apps, _time);
-        _appService = new ApplicationService(_jobs, _apps, _time);
+        _jobService = new JobService(_jobs, _apps, _ner, _time);
+        _appService = new ApplicationService(_jobs, _apps, _ner, _time, NullLogger<ApplicationService>.Instance);
     }
 
     private static JobRequest JobWith(List<string> mustHave, JobStatus? status = null) =>
         new("Software Engineer", "Remote", "Build APIs in C# backed by MongoDB.", mustHave, ["Python"], status);
 
+    /// <summary>The fake NER client reads the skills back out of the "Skills:" line.</summary>
     private static ApplyRequest Applicant(string email, List<string> skills) =>
-        new("Candidate", email, Resume, skills);
+        new("Candidate", email, $"{Resume} Skills: {string.Join(", ", skills)}");
 
     [Fact]
     public async Task Apply_saves_score_matched_and_missing()
@@ -41,7 +44,8 @@ public class ServiceTests
         Assert.Equal(0.5, stored.Score);
         Assert.Equal(["C#"], stored.Matched);
         Assert.Equal(["MongoDB"], stored.Missing);
-        Assert.Equal(NerStatus.Pending, stored.NerStatus);
+        Assert.Equal(NerStatus.Done, stored.NerStatus);
+        Assert.Equal(["Acme Corp"], stored.Entities.Orgs);
     }
 
     [Fact]
@@ -158,5 +162,94 @@ public class ServiceTests
         await _jobService.UpdateAsync(job.Id!, JobWith(["C#"]), default);
 
         Assert.Equal(JobStatus.Closed, _jobs.Stored(job.Id!).Status);
+    }
+
+    // ---------- NER fallback and retry ----------
+
+    [Fact]
+    public async Task Apply_when_ner_is_down_still_saves_the_application_as_pending()
+    {
+        var job = await _jobService.CreateAsync(JobWith(["C#", "MongoDB"]), default);
+        _ner.IsDown = true;
+
+        var result = await _appService.ApplyAsync(job.Id!, Applicant("a@x.com", ["C#", "MongoDB"]), default);
+
+        Assert.Null(result.Error);
+        var stored = _apps.Stored(result.Value!.Id!);
+        Assert.Equal(NerStatus.Pending, stored.NerStatus);
+        Assert.Empty(stored.Skills);
+        Assert.Equal(0.0, stored.Score);
+        Assert.Equal(["C#", "MongoDB"], stored.Missing);
+        Assert.Equal(ApplicationStatus.Applied, stored.Status);
+    }
+
+    [Fact]
+    public async Task Retry_after_ner_recovers_extracts_skills_and_rescores()
+    {
+        var job = await _jobService.CreateAsync(JobWith(["C#", "MongoDB"]), default);
+        _ner.IsDown = true;
+        var app = (await _appService.ApplyAsync(job.Id!, Applicant("a@x.com", ["C#", "MongoDB"]), default)).Value!;
+        _ner.IsDown = false;
+
+        var result = await _appService.RetryNerAsync(app.Id!, default);
+
+        Assert.Null(result.Error);
+        var stored = _apps.Stored(app.Id!);
+        Assert.Equal(NerStatus.Done, stored.NerStatus);
+        Assert.Equal(["C#", "MongoDB"], stored.Skills);
+        Assert.Equal(1.0, stored.Score);
+        Assert.Empty(stored.Missing);
+    }
+
+    [Fact]
+    public async Task Retry_while_ner_is_still_down_is_unavailable_and_changes_nothing()
+    {
+        var job = await _jobService.CreateAsync(JobWith(["C#"]), default);
+        _ner.IsDown = true;
+        var app = (await _appService.ApplyAsync(job.Id!, Applicant("a@x.com", ["C#"]), default)).Value!;
+
+        var result = await _appService.RetryNerAsync(app.Id!, default);
+
+        Assert.Equal(ErrorKind.Unavailable, result.Error?.Kind);
+        Assert.Equal(NerStatus.Pending, _apps.Stored(app.Id!).NerStatus);
+    }
+
+    [Fact]
+    public async Task Retry_on_an_already_processed_application_is_a_conflict_and_skips_ner()
+    {
+        var job = await _jobService.CreateAsync(JobWith(["C#"]), default);
+        var app = (await _appService.ApplyAsync(job.Id!, Applicant("a@x.com", ["C#"]), default)).Value!;
+        var callsBefore = _ner.Calls;
+
+        var result = await _appService.RetryNerAsync(app.Id!, default);
+
+        Assert.Equal(ErrorKind.Conflict, result.Error?.Kind);
+        Assert.Equal(callsBefore, _ner.Calls);
+    }
+
+    [Fact]
+    public async Task Retry_on_unknown_application_is_not_found()
+    {
+        var result = await _appService.RetryNerAsync("aaaaaaaaaaaaaaaaaaaaaaaa", default);
+
+        Assert.Equal(ErrorKind.NotFound, result.Error?.Kind);
+    }
+
+    [Fact]
+    public async Task Suggest_skills_returns_normalised_skills_from_the_description()
+    {
+        var result = await _jobService.SuggestSkillsAsync("We need someone strong in backend work. Skills: C#, MongoDB, c#", default);
+
+        Assert.Equal(["C#", "MongoDB"], result.Value);
+    }
+
+    [Fact]
+    public async Task Suggest_skills_when_ner_is_down_is_unavailable()
+    {
+        _ner.IsDown = true;
+
+        var result = await _jobService.SuggestSkillsAsync("We need someone strong in backend work. Skills: C#", default);
+
+        Assert.Equal(ErrorKind.Unavailable, result.Error?.Kind);
     }
 }

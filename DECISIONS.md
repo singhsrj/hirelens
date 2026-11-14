@@ -27,6 +27,15 @@ A running log of the technical choices in HireLens and why each was made. New de
 | 21 | **Client validation mirrors the API rules; the API stays the authority** | Instant feedback without a round trip, but the server re-validates everything. API field errors are mapped onto the form case-insensitively (the API returns `Title`, the form uses `title`). |
 | 22 | **The score is drawn as a strip with one segment per must-have skill** | It's the plan's "the recruiter sees exactly why someone ranked where they did", made visual: a 67% is visibly "2 of 3, missing MongoDB". |
 | 23 | **Resume text is fetched only when a recruiter opens it** | Keeps the ranked list payload small (the list endpoint already excludes `resumeText`). |
+| 24 | **EntityRuler placed *before* spaCy's statistical NER**, with `overwrite_ents` | Known skills are claimed as `SKILL` first, so "MongoDB" or "Kafka" isn't mislabelled ORG by the model. A curated list beats a trained model here: skills are a closed, known vocabulary and the list is easy to audit. |
+| 25 | **Skill list as data (`skills.json`): canonical name + aliases; ambiguous names case-sensitive** | Stored skills are always the canonical spelling, so scoring compares like with like. "Go"/"R"/"C" only match capitalised, so "I go to meetups" isn't a skill. |
+| 26 | **Only the NER component of `en_core_web_sm` is loaded** (parser, tagger, lemmatizer excluded) | Faster load and inference; nothing else is used. The model loads once at startup (FastAPI lifespan). |
+| 27 | **NER client returns `null` on any failure** (timeout, refused, 5xx, bad JSON); caller cancellation still throws | One place decides "NER is unavailable"; services just branch on null. Swallowing the caller's own cancellation would hide aborted requests. |
+| 28 | **Apply never fails because NER is down**: saved as `nerStatus: "pending"`, score 0, recruiter retries | The plan's "one failure doesn't take down the whole flow". Pending rows show "Not scored" rather than a misleading 0%. |
+| 29 | **1 s connect timeout + 5 s total timeout; default address `127.0.0.1`** | Found while testing an outage on Windows: a refused connection takes ~2 s because the OS retries, and `localhost` tries IPv6 then IPv4, so a stopped service cost each candidate ~4 s. Now ~1 s. A running service still gets 5 s to extract. |
+| 30 | **Retry only on `pending`, saved with a conditional update (`nerStatus == pending`)** | Matches the plan's endpoint contract (409 if already done). The condition stops two overlapping retries from both writing. |
+| 31 | **Candidates no longer type their skills** (removed from the API and form) | Self-reported skill lists are easy to stuff; scoring from the resume text is the point of the NER step. |
+| 32 | **NER service runs in Docker for dev and tests** (multi-stage image: `test` target runs pytest, `runtime` target runs as non-root) | One environment everywhere, no local Python/spaCy setup; Phase 5 deploys the same image. |
 
 ## Why MongoDB rather than SQL
 

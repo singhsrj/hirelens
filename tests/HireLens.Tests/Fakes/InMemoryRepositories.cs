@@ -85,6 +85,17 @@ public sealed class InMemoryApplicationRepository : IApplicationRepository
         return Task.FromResult(true);
     }
 
+    public Task<bool> SaveExtractionAsync(JobApplication a, CancellationToken ct)
+    {
+        if (!_apps.TryGetValue(a.Id!, out var stored) || stored.NerStatus != NerStatus.Pending)
+            return Task.FromResult(false);
+        stored.NerStatus = a.NerStatus;
+        stored.Skills = [.. a.Skills];
+        stored.Entities = a.Entities;
+        stored.ApplyMatch(new MatchResult(a.Score, a.Matched, a.Missing));
+        return Task.FromResult(true);
+    }
+
     private static JobApplication Copy(JobApplication a) => new()
     {
         Id = a.Id, JobId = a.JobId, Name = a.Name, Email = a.Email, ResumeText = a.ResumeText,

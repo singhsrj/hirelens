@@ -38,6 +38,9 @@ function render(job) {
       "Paste the full job description. Candidates see this on the role page."),
     field("mustHaveSkills", "Must-have skills", h("div", { id: "must-box" }),
       "Applicants are ranked by how many of these they have."),
+    h("div", { class: "suggest" },
+      h("button", { class: "btn btn-small", type: "button", id: "suggest" }, "Suggest skills from description"),
+      h("p", { class: "small muted", id: "suggest-status", role: "status" })),
     field("niceToHaveSkills", "Nice-to-have skills", h("div", { id: "nice-box" }),
       "Shown to candidates. These don't change the score."),
     editing
@@ -53,6 +56,29 @@ function render(job) {
 
   const mustHave = skillInput(form.querySelector("#must-box"), { id: "mustHaveSkills", describedBy: "mustHaveSkills-hint mustHaveSkills-error" });
   const niceToHave = skillInput(form.querySelector("#nice-box"), { id: "niceToHaveSkills", describedBy: "niceToHaveSkills-hint niceToHaveSkills-error" });
+
+  const suggestButton = form.querySelector("#suggest");
+  const suggestStatus = form.querySelector("#suggest-status");
+  suggestButton.addEventListener("click", async () => {
+    const description = form.elements.namedItem("descriptionText").value.trim();
+    if (description.length < 20) {
+      suggestStatus.textContent = "Paste the job description first, then ask for suggestions.";
+      form.elements.namedItem("descriptionText").focus();
+      return;
+    }
+    suggestStatus.textContent = "";
+    try {
+      const { skills } = await busy(suggestButton, "Reading description…", () => api.suggestSkills(description));
+      const existing = new Set([...mustHave.get(), ...niceToHave.get()].map((s) => s.toLowerCase()));
+      const added = skills.filter((s) => !existing.has(s.toLowerCase()));
+      mustHave.set([...mustHave.get(), ...added]);
+      suggestStatus.textContent = added.length
+        ? `Added ${added.length} ${added.length === 1 ? "skill" : "skills"}: ${added.join(", ")}. Remove any that aren't must-haves.`
+        : skills.length ? "No new skills found. Everything suggested is already listed." : "No known skills found in the description. Add them by hand.";
+    } catch (error) {
+      suggestStatus.textContent = error.message;
+    }
+  });
 
   if (editing) {
     form.elements.namedItem("title").value = job.title;

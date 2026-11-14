@@ -4,6 +4,7 @@ using System.Threading.RateLimiting;
 using HireLens.Api.Data;
 using HireLens.Api.Features.Applications;
 using HireLens.Api.Features.Jobs;
+using HireLens.Api.Ner;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
@@ -20,20 +21,26 @@ builder.Services.ConfigureHttpJsonOptions(o =>
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddMongo(builder.Configuration);
+builder.Services.AddNerClient(builder.Configuration);
 builder.Services.AddScoped<JobService>();
 builder.Services.AddScoped<ApplicationService>();
 
-// Apply is the only public write endpoint, so it gets a per-IP fixed-window limit.
-var applyLimit = builder.Configuration.GetValue("RateLimiting:Apply:PermitLimit", 5);
-var applyWindow = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimiting:Apply:WindowSeconds", 60));
+// Per-IP fixed-window limits. Apply is the public write endpoint; skill suggestions run CPU-heavy NER.
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    o.AddPolicy(ApplicationEndpoints.ApplyRateLimitPolicy, http =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions { PermitLimit = applyLimit, Window = applyWindow, QueueLimit = 0 }));
+    AddPerIpPolicy(o, ApplicationEndpoints.ApplyRateLimitPolicy, "RateLimiting:Apply", defaultLimit: 5);
+    AddPerIpPolicy(o, JobEndpoints.SuggestRateLimitPolicy, "RateLimiting:SuggestSkills", defaultLimit: 20);
 });
+
+void AddPerIpPolicy(Microsoft.AspNetCore.RateLimiting.RateLimiterOptions o, string policy, string section, int defaultLimit)
+{
+    var limit = builder.Configuration.GetValue($"{section}:PermitLimit", defaultLimit);
+    var window = TimeSpan.FromSeconds(builder.Configuration.GetValue($"{section}:WindowSeconds", 60));
+    o.AddPolicy(policy, http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = limit, Window = window, QueueLimit = 0 }));
+}
 
 var app = builder.Build();
 

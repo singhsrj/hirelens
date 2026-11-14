@@ -19,6 +19,7 @@ public static class ApplicationEndpoints
 
         applications.MapGet("/{id}", Get).WithSummary("Full application, including resume text");
         applications.MapPatch("/{id}/status", ChangeStatus).WithSummary("Shortlist or reject an applicant");
+        applications.MapPost("/{id}/retry-ner", RetryNer).WithSummary("Re-run skill extraction on a pending application");
 
         return app;
     }
@@ -46,6 +47,13 @@ public static class ApplicationEndpoints
         string id, ApplicationService service, CancellationToken ct)
     {
         var result = await service.GetAsync(id, ct);
+        return result.Error is { } error ? error.ToProblem() : TypedResults.Ok(ApplicationDetail.From(result.Value!));
+    }
+
+    private static async Task<Results<Ok<ApplicationDetail>, ProblemHttpResult>> RetryNer(
+        string id, ApplicationService service, CancellationToken ct)
+    {
+        var result = await service.RetryNerAsync(id, ct);
         return result.Error is { } error ? error.ToProblem() : TypedResults.Ok(ApplicationDetail.From(result.Value!));
     }
 

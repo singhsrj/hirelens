@@ -1,22 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using HireLens.Api.Domain;
-using HireLens.Api.Features.Jobs;
 
 namespace HireLens.Api.Features.Applications;
 
-/// <summary>
-/// A candidate's application. <see cref="Skills"/> is typed in by hand until the NER service
-/// arrives in Phase 4, after which skills are extracted from the resume text.
-/// </summary>
+/// <summary>A candidate's application. Skills are extracted from the resume text by the NER service.</summary>
 public sealed record ApplyRequest(
     [Required, StringLength(100, MinimumLength = 2)] string Name,
     [Required, EmailAddress, StringLength(254)] string Email,
-    [Required, StringLength(50_000, MinimumLength = 50)] string ResumeText,
-    [MaxLength(SkillRules.MaxSkills)] List<string>? Skills) : IValidatableObject
-{
-    public IEnumerable<ValidationResult> Validate(ValidationContext context) =>
-        SkillRules.Check(Skills, nameof(Skills));
-}
+    [Required, StringLength(50_000, MinimumLength = 50)] string ResumeText);
 
 public sealed record ChangeStatusRequest([Required] ApplicationStatus? Status);
 

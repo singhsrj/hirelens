@@ -5,6 +5,8 @@ namespace HireLens.Api.Features.Jobs;
 
 public static class JobEndpoints
 {
+    public const string SuggestRateLimitPolicy = "suggest-skills";
+
     public static IEndpointRouteBuilder MapJobEndpoints(this IEndpointRouteBuilder app)
     {
         var jobs = app.MapGroup("/api/jobs").WithTags("Jobs");
@@ -13,6 +15,9 @@ public static class JobEndpoints
         jobs.MapGet("/", ListJobs).WithSummary("List jobs (open by default)");
         jobs.MapGet("/{id}", GetJob).WithSummary("Job details");
         jobs.MapPut("/{id}", UpdateJob).WithSummary("Edit a job, or close/reopen it");
+        jobs.MapPost("/extract-skills", SuggestSkills)
+            .RequireRateLimiting(SuggestRateLimitPolicy)
+            .WithSummary("Suggest must-have skills from a job description (calls the NER service)");
 
         return app;
     }
@@ -47,6 +52,13 @@ public static class JobEndpoints
     {
         var result = await service.GetAsync(id, ct);
         return result.Error is { } error ? error.ToProblem() : TypedResults.Ok(JobResponse.From(result.Value!));
+    }
+
+    private static async Task<Results<Ok<SuggestSkillsResponse>, ProblemHttpResult>> SuggestSkills(
+        SuggestSkillsRequest request, JobService service, CancellationToken ct)
+    {
+        var result = await service.SuggestSkillsAsync(request.DescriptionText, ct);
+        return result.Error is { } error ? error.ToProblem() : TypedResults.Ok(new SuggestSkillsResponse(result.Value!));
     }
 
     private static async Task<Results<Ok<JobResponse>, ProblemHttpResult>> UpdateJob(
