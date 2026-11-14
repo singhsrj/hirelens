@@ -24,6 +24,10 @@ public sealed record JobRequest(
     }
 }
 
+public sealed record SuggestSkillsRequest([Required, StringLength(20_000, MinimumLength = 20)] string DescriptionText);
+
+public sealed record SuggestSkillsResponse(List<string> Skills);
+
 public sealed record JobResponse(
     string Id,
     string Title,

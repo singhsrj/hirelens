@@ -1,7 +1,8 @@
 // End-to-end browser test for the HireLens UI: drives the recruiter and candidate flows in
 // Microsoft Edge (via playwright-core, no browser download) and saves screenshots to ./shots.
 //
-// Needs the API running with a relaxed apply rate limit (the test submits several applications):
+// Needs MongoDB + the NER service running (docker compose up -d), and the API with a relaxed
+// apply rate limit (the test submits several applications):
 //   RateLimiting__Apply__PermitLimit=100 dotnet run --project src/HireLens.Api
 // Then:  cd tests/e2e && npm install && npm test
 // Each run creates its own uniquely titled job, so it can run against a database that already has data.
@@ -42,7 +43,12 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   await page.fill("#title", TITLE);
   await page.fill("#location", "Remote");
   await page.fill("#descriptionText", "Build ASP.NET Core APIs in C# backed by MongoDB, plus plain JavaScript frontends.\n\nYou'll own features end to end.");
-  for (const s of ["C#", "MongoDB", "JavaScript", "HTML"]) { await page.fill("#mustHaveSkills", s); await page.press("#mustHaveSkills", "Enter"); }
+  await page.click("#suggest");
+  await page.waitForFunction(() => document.querySelector("#suggest-status")?.textContent.startsWith("Added"));
+  const suggested = await page.$$eval("#must-box .chip", (els) => els.map((e) => e.firstChild.textContent));
+  check("suggest skills fills must-haves from the description", suggested.join() === "ASP.NET Core,C#,MongoDB,JavaScript", suggested.join());
+  await page.click("#must-box button[aria-label='Remove ASP.NET Core']");
+  await page.fill("#mustHaveSkills", "HTML"); await page.press("#mustHaveSkills", "Enter");
   await page.fill("#niceToHaveSkills", "Python, Docker"); await page.press("#niceToHaveSkills", "Enter");
   check("skill chips added", (await page.$$("#must-box .chip")).length === 4 && (await page.$$("#nice-box .chip")).length === 2);
   await page.press("#mustHaveSkills", "Backspace"); // removes HTML
@@ -72,7 +78,7 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   await page.fill("#email", "asha@example.com");
   check("field error clears on input", (await page.textContent("#email-error")) === "" && !(await page.getAttribute("#email", "aria-invalid")));
   await page.fill("#resumeText", RESUME("Mostly C#, ASP.NET Core and MongoDB, some JavaScript."));
-  await page.fill("#skills", "c#, mongodb, javascript"); await page.press("#skills", "Enter");
+  check("apply form has no manual skills field", (await page.$("#skills")) === null);
   await page.screenshot({ path: `${OUT}/05-apply-filled.png`, fullPage: true });
   await page.click("button[type=submit]");
   await page.waitForSelector(".success");
@@ -91,7 +97,7 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   const more = [["Ben Ortiz", ["C#"]], ["Chen Li", ["C#", "JavaScript"]], ["Dana Kim", []], ["Eli Novak", ["MongoDB", "JavaScript", "C#"]]];
   for (const [name, skills] of more) {
     const r = await page.request.post(`${BASE}/api/jobs/${jobId}/applications`, {
-      data: { name, email: name.split(" ")[0].toLowerCase() + "@example.com", resumeText: RESUME(`Skills: ${skills.join(", ") || "mostly Java"}.`), skills },
+      data: { name, email: name.split(" ")[0].toLowerCase() + "@example.com", resumeText: RESUME(`Skills: ${skills.join(", ") || "mostly Java"}.`) },
     });
     if (r.status() !== 201) throw new Error(`seed failed ${r.status()}`);
   }
@@ -118,6 +124,8 @@ const check = (name, ok, detail = "") => { results.push({ name, ok }); console.l
   await page.click(".applicant:nth-child(1) .disclosure");
   await page.waitForSelector(".applicant:nth-child(1) .resume");
   check("resume loads on demand", (await page.textContent(".applicant:nth-child(1) .resume")).includes("ASP.NET Core"));
+  const extracted = await page.textContent(".applicant:nth-child(1) .extracted");
+  check("extracted details list every skill found", extracted.includes("All skills found") && extracted.includes("ASP.NET Core") && !extracted.includes("[object"), extracted);
   await page.click(".applicant:nth-child(3) .disclosure");
   await page.waitForSelector(".applicant:nth-child(3) .history li:nth-child(2)");
   check("history shows shortlisted", (await page.textContent(".applicant:nth-child(3) .history")).includes("Shortlisted"));

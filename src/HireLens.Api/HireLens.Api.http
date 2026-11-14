@@ -39,15 +39,21 @@ Content-Type: application/json
 }
 
 ###
-# Apply (skills typed by hand until NER in Phase 4)
+# Suggest skills from a job description (calls NER; 503 if it's down)
+POST {{host}}/api/jobs/extract-skills
+Content-Type: application/json
+
+{ "descriptionText": "Build ASP.NET Core APIs in C# backed by MongoDB, with plain JavaScript frontends." }
+
+###
+# Apply (skills are extracted from resumeText by NER)
 POST {{host}}/api/jobs/{{jobId}}/applications
 Content-Type: application/json
 
 {
   "name": "Alice Example",
   "email": "alice@example.com",
-  "resumeText": "Backend engineer with six years of C# and ASP.NET Core, MongoDB and some JavaScript.",
-  "skills": ["C#", "MongoDB"]
+  "resumeText": "Backend engineer with six years of C# and ASP.NET Core, MongoDB and some JavaScript at Infosys in Pune."
 }
 
 ###
@@ -61,3 +67,7 @@ PATCH {{host}}/api/applications/{{appId}}/status
 Content-Type: application/json
 
 { "status": "shortlisted" }
+
+###
+# Re-run NER on a pending application (409 if already done, 503 if NER is still down)
+POST {{host}}/api/applications/{{appId}}/retry-ner

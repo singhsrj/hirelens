@@ -2,13 +2,15 @@ using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HireLens.Api.Common;
 
-public enum ErrorKind { NotFound, Conflict, Invalid }
+public enum ErrorKind { NotFound, Conflict, Invalid, Unavailable }
 
 public sealed record Error(ErrorKind Kind, string Message)
 {
     public static Error NotFound(string message) => new(ErrorKind.NotFound, message);
     public static Error Conflict(string message) => new(ErrorKind.Conflict, message);
     public static Error Invalid(string message) => new(ErrorKind.Invalid, message);
+    /// <summary>A dependency (e.g. the NER service) is down; the client can retry later.</summary>
+    public static Error Unavailable(string message) => new(ErrorKind.Unavailable, message);
 
     public ProblemHttpResult ToProblem() => TypedResults.Problem(
         detail: Message,
@@ -16,6 +18,7 @@ public sealed record Error(ErrorKind Kind, string Message)
         {
             ErrorKind.NotFound => StatusCodes.Status404NotFound,
             ErrorKind.Conflict => StatusCodes.Status409Conflict,
+            ErrorKind.Unavailable => StatusCodes.Status503ServiceUnavailable,
             _ => StatusCodes.Status400BadRequest,
         });
 }

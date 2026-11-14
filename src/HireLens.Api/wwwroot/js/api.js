@@ -43,9 +43,11 @@ export const api = {
   getJob: (jobId) => request("GET", `/api/jobs/${id(jobId)}`),
   createJob: (job) => request("POST", "/api/jobs", job),
   updateJob: (jobId, job) => request("PUT", `/api/jobs/${id(jobId)}`, job),
+  suggestSkills: (descriptionText) => request("POST", "/api/jobs/extract-skills", { descriptionText }),
 
   apply: (jobId, application) => request("POST", `/api/jobs/${id(jobId)}/applications`, application),
   listApplicants: (jobId) => request("GET", `/api/jobs/${id(jobId)}/applications`),
   getApplication: (appId) => request("GET", `/api/applications/${id(appId)}`),
   setStatus: (appId, status) => request("PATCH", `/api/applications/${id(appId)}/status`, { status }),
+  retryNer: (appId) => request("POST", `/api/applications/${id(appId)}/retry-ner`),
 };

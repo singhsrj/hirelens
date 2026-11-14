@@ -2,14 +2,14 @@
 
 A small applicant screener. A recruiter posts a job, candidates apply with their resume text, a small NER service extracts skills, and the recruiter sees applicants ranked against the job's must-have skills.
 
-> Status: **Phase 3 — frontend done.** Recruiter and candidate flows work in the browser (skills entered by hand; NER arrives in Phase 4). See [`docs/HireLens_Development_Plan.md`](docs/HireLens_Development_Plan.md) for the full plan and [`DECISIONS.md`](DECISIONS.md) for the reasoning behind the tech choices.
+> Status: **Phase 4 — NER integrated.** Skills are extracted from resumes and job descriptions by a Python spaCy service; if it's down, applying still works and extraction can be retried. See [`docs/HireLens_Development_Plan.md`](docs/HireLens_Development_Plan.md) for the full plan and [`DECISIONS.md`](DECISIONS.md) for the reasoning behind the tech choices.
 
 ## Stack
 
 - **API:** ASP.NET Core (.NET 10, C#), Minimal APIs, MongoDB C# driver
 - **Frontend:** plain HTML / CSS / JavaScript served from `wwwroot`
 - **Database:** MongoDB
-- **NER:** Python, FastAPI + spaCy *(Phase 4)*
+- **NER:** Python 3.12, FastAPI + spaCy (`en_core_web_sm` + an EntityRuler skill list), in `ner/`
 
 ```
 HTML / CSS / JS  (static files served by ASP.NET from wwwroot)
@@ -36,10 +36,10 @@ ASP.NET Core Web API  (.NET 10, C#)
 
 ## Running locally
 
-Prerequisites: .NET 10 SDK, Docker Desktop.
+Prerequisites: .NET 10 SDK, Docker Desktop. (The first `docker compose up` builds the NER image, which takes a few minutes.)
 
 ```bash
-docker compose up -d mongo          # MongoDB on localhost:27017
+docker compose up -d                # MongoDB on :27017 and the NER service on :8000
 dotnet run --project src/HireLens.Api
 ```
 
@@ -75,17 +75,29 @@ Plain HTML, CSS and ES modules in `wwwroot/`, no build step. Recruiter pages hav
 | GET | `/api/applications/{id}` | Full application incl. resume text and status history |
 | PATCH | `/api/applications/{id}/status` | Shortlist or reject |
 
-Coming in Phase 4: `POST /api/jobs/extract-skills`, `POST /api/applications/{id}/retry-ner`.
+| POST | `/api/jobs/extract-skills` | Suggest skills from a job description (NER; 20/min per IP) |
+| POST | `/api/applications/{id}/retry-ner` | Re-run skill extraction on a `pending` application |
 
-Errors are returned as [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457): 400 validation, 404 not found, 409 duplicate application or closed job, 429 rate limited.
+Errors are returned as [ProblemDetails](https://www.rfc-editor.org/rfc/rfc9457): 400 validation, 404 not found, 409 duplicate application / closed job / already extracted, 429 rate limited, 503 NER service unavailable.
+
+### NER service
+
+`POST http://localhost:8000/extract` with `{ "text": "..." }` returns `{ skills, orgs, locations, dates }`.
+
+- **Skills** come from an EntityRuler (custom `SKILL` label) built from [`ner/app/skills.json`](ner/app/skills.json): canonical names plus aliases (`js` → JavaScript, `csharp` → C#). Ambiguous short names (Go, R, C) only match with exact capitalisation. Add a skill by editing that file and rebuilding the image.
+- **Organisations, places, dates** come from spaCy's built-in ORG, GPE/LOC and DATE labels. The small model is noisy here (e.g. "Software" in "Software engineer" can be tagged ORG); these fields are shown to the recruiter but never affect the score.
+- **If the service is down**, the API saves the application with `nerStatus: "pending"` and a score of 0 and logs a warning; the recruiter sees "Not scored" with a "Read skills now" button. A stopped service costs the candidate about 1 s (connect timeout), not an error.
 
 ## Tests
 
 ```bash
-dotnet test        # xUnit: scoring, status rules, services (no database needed)
+dotnet test        # xUnit: scoring, status rules, services, NER client + fallback (no database or NER needed)
+
+# NER service tests (pytest, run in Docker so no local Python setup is needed)
+docker build --target test -t hirelens-ner-test ner && docker run --rm hirelens-ner-test
 ```
 
-**End-to-end browser test** (`tests/e2e/`): drives the recruiter and candidate flows in the installed Microsoft Edge and saves screenshots to `tests/e2e/shots/`. It submits several applications, so start the API with a relaxed rate limit:
+**End-to-end browser test** (`tests/e2e/`): needs `docker compose up -d` (MongoDB + NER). Drives the recruiter and candidate flows in the installed Microsoft Edge and saves screenshots to `tests/e2e/shots/`. It submits several applications, so start the API with a relaxed rate limit:
 
 ```bash
 RateLimiting__Apply__PermitLimit=100 dotnet run --project src/HireLens.Api
@@ -102,10 +114,12 @@ src/HireLens.Api/
   Domain/              Job, JobApplication, scoring, skill normalisation (no Mongo/HTTP logic)
   Data/                Mongo setup, repositories, startup index creation
   Features/            Jobs and Applications: request/response contracts, services, endpoints
+  Ner/                 typed HttpClient for the NER service (returns null on any failure)
   Common/              Result type -> ProblemDetails
   wwwroot/             static frontend: css/app.css, js/api.js (fetch wrapper), js/ui.js (DOM helpers), js/pages/*.js
 tests/HireLens.Tests/  xUnit tests
 tests/e2e/             browser end-to-end test (Node + Edge)
 docs/                  development plan
-docker-compose.yml     local MongoDB
+ner/                   Python NER service: app/ (FastAPI + spaCy), tests/ (pytest), Dockerfile
+docker-compose.yml     local MongoDB + NER service
 ```

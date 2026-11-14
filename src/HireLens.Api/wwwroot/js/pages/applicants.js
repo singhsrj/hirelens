@@ -69,7 +69,8 @@ function renderList() {
       FILTERS.map((f) => h("button", {
         type: "button", "aria-pressed": String(filter === f.key),
         onclick: () => { filter = f.key; renderList(); },
-      }, f.label, h("span", { class: "count" }, counts[f.key])))));
+      }, f.label, h("span", { class: "count" }, counts[f.key])))),
+    pendingNotice());
 
   const visible = applicants
     .map((a, i) => ({ a, rank: i + 1 }))
@@ -83,22 +84,74 @@ function renderList() {
 }
 
 function row(a, rank) {
-  const total = job.mustHaveSkills.length;
-  const li = h("li", { class: "applicant", "aria-label": `Rank ${rank}: ${a.name}, ${percent(a.score)} match` },
+  const pending = a.nerStatus === "pending";
+  const li = h("li", { class: "applicant", "aria-label": `Rank ${rank}: ${a.name}, ${pending ? "skills not read yet" : `${percent(a.score)} match`}` },
     h("span", { class: "rank" }, rank),
     h("div", { class: "who" }, h("strong", {}, a.name), h("span", {}, a.email)),
-    h("div", { class: "score" },
-      h("div", { class: "score-head" },
-        h("span", { class: "score-value" }, percent(a.score)),
-        h("span", { class: "score-of" }, `${a.matched.length} of ${total} must-haves`)),
-      scoreStrip(job.mustHaveSkills, a.matched),
-      matchChips(job.mustHaveSkills, a.matched)),
+    pending ? pendingScore(a) : scoreBlock(a),
     h("span", { class: `status status-${a.status}` }, a.status === "applied" ? "To review" : capitalize(a.status)),
     h("div", { class: "decision" },
       decisionButton(a, "shortlisted", "Shortlist"),
       decisionButton(a, "rejected", "Reject")),
     details(a));
   return li;
+}
+
+function scoreBlock(a) {
+  return h("div", { class: "score" },
+    h("div", { class: "score-head" },
+      h("span", { class: "score-value" }, percent(a.score)),
+      h("span", { class: "score-of" }, `${a.matched.length} of ${job.mustHaveSkills.length} must-haves`)),
+    scoreStrip(job.mustHaveSkills, a.matched),
+    matchChips(job.mustHaveSkills, a.matched));
+}
+
+/** Saved while the skill extractor was down: no score yet, so say so instead of showing 0%. */
+function pendingScore(a) {
+  return h("div", { class: "score score-pending" },
+    h("div", { class: "score-head" },
+      h("span", { class: "score-value" }, "Not scored"),
+      h("span", { class: "score-of" }, "Skills haven't been read from this resume yet")),
+    h("div", {},
+      h("button", { type: "button", class: "btn btn-small", onclick: (e) => retry([a], e.currentTarget) }, "Read skills now")));
+}
+
+function pendingNotice() {
+  const pending = applicants.filter((a) => a.nerStatus === "pending");
+  if (pending.length === 0) return null;
+  return h("div", { class: "notice", role: "status" },
+    h("p", {}, `${pending.length} ${pending.length === 1 ? "application was" : "applications were"} saved while skill reading was unavailable, so ${pending.length === 1 ? "it isn't" : "they aren't"} scored yet.`),
+    pending.length > 1
+      ? h("button", { type: "button", class: "btn btn-small", onclick: (e) => retry(pending, e.currentTarget) }, "Read skills for all")
+      : null);
+}
+
+/** Retries NER one application at a time, re-ranks, and reports how many succeeded. */
+async function retry(targets, button) {
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  button.textContent = "Reading skills…";
+  let done = 0;
+  let lastError = null;
+  for (const a of targets) {
+    try {
+      const updated = await api.retryNer(a.id);
+      Object.assign(a, {
+        nerStatus: updated.nerStatus, skills: updated.skills, score: updated.score,
+        matched: updated.matched, missing: updated.missing,
+      });
+      done++;
+    } catch (error) {
+      lastError = error;
+      if (error.status === 503) break; // the service is still down; no point trying the rest
+    }
+  }
+  // Same order as the API: score high to low, earlier applicants first on ties.
+  applicants.sort((x, y) => y.score - x.score || new Date(x.createdAt) - new Date(y.createdAt));
+  renderList();
+  if (lastError && done === 0) toast(lastError.message);
+  else if (lastError) toast(`Scored ${done} of ${targets.length}. ${lastError.message}`);
+  else toast(done === 1 ? `Scored ${targets[0].name}` : `Scored ${done} applications`);
 }
 
 function decisionButton(a, status, label) {
@@ -122,6 +175,20 @@ function decisionButton(a, status, label) {
   }, label);
 }
 
+/** What NER found in the resume: every skill (not just must-haves), plus organisations, places and dates. */
+function extracted(full) {
+  if (full.nerStatus === "pending") return h("p", { class: "small muted" }, "Skills haven't been read from this resume yet.");
+  const rows = [
+    ["All skills found", full.skills],
+    ["Organisations", full.entities.orgs],
+    ["Places", full.entities.locations],
+    ["Dates", full.entities.dates],
+  ].filter(([, values]) => values.length);
+  if (rows.length === 0) return h("p", { class: "small muted" }, "No skills or other details were found in this resume.");
+  return h("dl", { class: "extracted" },
+    rows.flatMap(([label, values]) => [h("dt", {}, label), h("dd", {}, values.join(", "))]));
+}
+
 /** Resume and history are only fetched when the recruiter opens them. */
 function details(a) {
   const panelId = `details-${a.id}`;
@@ -140,7 +207,7 @@ function details(a) {
         const full = await api.getApplication(a.id);
         panel.dataset.loaded = "true";
         panel.replaceChildren(
-          h("p", { class: "small muted" }, `Skills listed: ${full.skills.join(", ") || "none"}`),
+          extracted(full),
           h("div", { class: "resume" }, full.resumeText),
           h("ul", { class: "history", "aria-label": "Status history" },
             full.statusHistory.map((s) => h("li", {}, `${s.status === "applied" ? "Applied" : capitalize(s.status)} ${formatDateTime(s.at)}`))));

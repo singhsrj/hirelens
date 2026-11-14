@@ -2,7 +2,7 @@
 import { api } from "../api.js";
 import {
   $, h, param, chips, formatDate, loading, errorState, emptyState,
-  skillInput, showFieldErrors, clearFieldErrors, clearErrorsOnInput, busy,
+  showFieldErrors, clearFieldErrors, clearErrorsOnInput, busy,
 } from "../ui.js";
 
 const host = $("#job");
@@ -52,15 +52,10 @@ function renderForm(panel, job) {
     field("name", "Full name", h("input", { type: "text", id: "name", name: "name", autocomplete: "name", required: true, maxlength: 100, "aria-describedby": "name-error" })),
     field("email", "Email", h("input", { type: "email", id: "email", name: "email", autocomplete: "email", required: true, maxlength: 254, "aria-describedby": "email-error" })),
     field("resumeText", "Resume",
-      h("textarea", { id: "resumeText", name: "resumeText", required: true, rows: 9, "aria-describedby": "resumeText-hint resumeText-error" }),
-      "Paste the text of your resume. At least 50 characters."),
-    field("skills", "Your skills", h("div", { id: "skills-box" }),
-      "Add each skill you want considered for this role."),
+      h("textarea", { id: "resumeText", name: "resumeText", required: true, rows: 12, "aria-describedby": "resumeText-hint resumeText-error" }),
+      "Paste the text of your resume. We read your skills from it, so include the tools and languages you've used."),
     h("p", { class: "form-error", role: "alert", id: "form-error" }),
     h("div", { class: "form-actions" }, h("button", { class: "btn btn-primary", type: "submit" }, "Send application")));
-
-  // Phase 2-3: candidates list skills by hand. Phase 4 extracts them from the resume with NER.
-  const skills = skillInput(form.querySelector("#skills-box"), { id: "skills", describedBy: "skills-hint skills-error" });
 
   clearErrorsOnInput(form);
   form.addEventListener("submit", async (e) => {
@@ -72,7 +67,6 @@ function renderForm(panel, job) {
       name: form.elements.namedItem("name").value.trim(),
       email: form.elements.namedItem("email").value.trim(),
       resumeText: form.elements.namedItem("resumeText").value.trim(),
-      skills: skills.get(),
     };
 
     const local = validate(data);
@@ -97,7 +91,7 @@ function renderForm(panel, job) {
 
   panel.replaceChildren(
     h("h2", { id: "apply-heading" }, "Apply for this role"),
-    h("p", { class: "muted small" }, "We match your skills against the must-haves listed for this role."),
+    h("p", { class: "muted small" }, "We read the skills in your resume and match them against this role's must-haves."),
     form);
 }
 

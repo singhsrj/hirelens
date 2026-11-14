@@ -43,6 +43,14 @@ public sealed class JobApplication
         CreatedAt = now,
     };
 
+    /// <summary>Stores what NER found in the resume and marks extraction as done.</summary>
+    public void RecordExtraction(IEnumerable<string> skills, ExtractedEntities entities)
+    {
+        Skills = SkillList.Normalize(skills);
+        Entities = entities;
+        NerStatus = NerStatus.Done;
+    }
+
     public void ApplyMatch(MatchResult match)
     {
         Score = match.Score;

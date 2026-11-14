@@ -16,6 +16,11 @@ public interface IApplicationRepository
     Task UpdateScoresAsync(IEnumerable<(string Id, MatchResult Match)> updates, CancellationToken ct);
     /// <summary>Sets the status and appends the matching history entry in one atomic update.</summary>
     Task<bool> AppendStatusAsync(string id, StatusChange change, CancellationToken ct);
+    /// <summary>
+    /// Saves NER output and the resulting score, but only if the application is still pending,
+    /// so two overlapping retries can't both write. Returns false if nothing was updated.
+    /// </summary>
+    Task<bool> SaveExtractionAsync(JobApplication application, CancellationToken ct);
 }
 
 public sealed class ApplicationRepository(IMongoDatabase db) : IApplicationRepository
@@ -75,5 +80,19 @@ public sealed class ApplicationRepository(IMongoDatabase db) : IApplicationRepos
             Update.Set(a => a.Status, change.Status).Push(a => a.StatusHistory, change),
             cancellationToken: ct);
         return result.MatchedCount == 1;
+    }
+
+    public async Task<bool> SaveExtractionAsync(JobApplication a, CancellationToken ct)
+    {
+        var result = await _apps.UpdateOneAsync(
+            x => x.Id == a.Id && x.NerStatus == NerStatus.Pending,
+            Update.Set(x => x.NerStatus, a.NerStatus)
+                  .Set(x => x.Skills, a.Skills)
+                  .Set(x => x.Entities, a.Entities)
+                  .Set(x => x.Score, a.Score)
+                  .Set(x => x.Matched, a.Matched)
+                  .Set(x => x.Missing, a.Missing),
+            cancellationToken: ct);
+        return result.ModifiedCount == 1;
     }
 }

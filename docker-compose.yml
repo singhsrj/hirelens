@@ -1,4 +1,4 @@
-# Phase 1: MongoDB only. API and NER services are added in Phase 5.
+# Local dev: MongoDB + the NER service. The API runs with `dotnet run` (it's containerised in Phase 5).
 services:
   mongo:
     image: mongo:8.0
@@ -13,6 +13,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  ner:
+    build:
+      context: ./ner
+      target: runtime
+    image: hirelens-ner
+    container_name: hirelens-ner
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
 
 volumes:
   mongo-data:

@@ -1,10 +1,11 @@
 using HireLens.Api.Common;
 using HireLens.Api.Data;
 using HireLens.Api.Domain;
+using HireLens.Api.Ner;
 
 namespace HireLens.Api.Features.Jobs;
 
-public sealed class JobService(IJobRepository jobs, IApplicationRepository applications, TimeProvider time)
+public sealed class JobService(IJobRepository jobs, IApplicationRepository applications, INerClient ner, TimeProvider time)
 {
     public async Task<Job> CreateAsync(JobRequest request, CancellationToken ct)
     {
@@ -42,6 +43,12 @@ public sealed class JobService(IJobRepository jobs, IApplicationRepository appli
 
         return job;
     }
+
+    /// <summary>Suggests skills from a job description. The recruiter confirms or edits them before saving.</summary>
+    public async Task<Result<List<string>>> SuggestSkillsAsync(string descriptionText, CancellationToken ct) =>
+        await ner.ExtractAsync(descriptionText, ct) is { } extraction
+            ? SkillList.Normalize(extraction.Skills)
+            : Error.Unavailable("Skill suggestions are unavailable right now. Add skills by hand, or try again in a minute.");
 
     private async Task RescoreApplicationsAsync(Job job, CancellationToken ct)
     {
